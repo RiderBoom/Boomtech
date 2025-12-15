@@ -13,9 +13,45 @@ import {
 // import { ethers } from 'ethers'; 
 
 // --- [PREVIEW FIX] Mock Ethers for Canvas Display Only ---
+<<<<<<< HEAD
 const ethers = {};
 
 // --- Configuration ---
+=======
+// DELETE this section when using real 'ethers' import above
+const ethers = {
+  formatEther: (wei) => {
+    try {
+      return (parseFloat(wei) / 1e18).toFixed(4);
+    } catch (e) { return "0.0000"; }
+  },
+  parseEther: (eth) => {
+    try {
+      return BigInt(Math.floor(parseFloat(eth) * 1e18));
+    } catch (e) { return BigInt(0); }
+  },
+  JsonRpcProvider: class { 
+    getBalance() { return Promise.resolve(BigInt(0)); } 
+  },
+  Wallet: { 
+    createRandom: () => ({ 
+      address: '0x' + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''), 
+      mnemonic: { phrase: 'abandon ability able about above absent absorb abstract absurd abuse access accident' } 
+    }),
+    fromPhrase: () => ({ 
+      address: '0xImported...' + Math.floor(Math.random() * 1000),
+      connect: () => ({ 
+        address: '0x...', 
+        sendTransaction: () => Promise.resolve({ hash: '0x123...', wait: () => Promise.resolve() }) 
+      }) 
+    })
+  }
+};
+// --------------------------------------------------------
+
+// --- [CRITICAL] Real Blockchain Configuration ---
+const SMART_CONTRACT_ADDRESS = "0xYourDeployedContractAddressHere";
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
 const DEFAULT_RPC_URL = "https://rpc.ankr.com/eth"; 
 
 // --- Confetti Component ---
@@ -57,7 +93,11 @@ const Web3WalletApp = () => {
       analytics: 'Analytics', assetAllocation: 'Asset Allocation', pnl: '7D Profit & Loss', contacts: 'Contacts',
       addContact: 'Add Contact', browser: 'DApp Browser', visit: 'Visit', installApp: 'Install App', offline: 'Offline Mode',
       processing: 'Processing...', importWallet: 'Import Wallet', enterSeed: 'Enter Seed Phrase (12/24 words)', restore: 'Restore Wallet',
+<<<<<<< HEAD
       importExisting: 'Import Existing', connectMetaMask: 'Connect MetaMask', metaMaskError: 'MetaMask not detected'
+=======
+      importExisting: 'Import Existing', connectMetaMask: 'Connect MetaMask', metaMaskError: 'MetaMask not installed!'
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
     },
     th: {
       totalBalance: 'ยอดเงินรวม', receive: 'รับเงิน', send: 'โอนเงิน', swap: 'แลกเปลี่ยน', buy: 'ซื้อเหรียญ', assets: 'สินทรัพย์',
@@ -74,7 +114,11 @@ const Web3WalletApp = () => {
       assetAllocation: 'สัดส่วนสินทรัพย์', pnl: 'กำไร/ขาดทุน 7 วัน', contacts: 'รายชื่อผู้ติดต่อ', addContact: 'เพิ่มรายชื่อ',
       browser: 'เว็บ 3.0', visit: 'เข้าชม', installApp: 'ติดตั้งแอป', offline: 'โหมดออฟไลน์',
       processing: 'กำลังประมวลผล...', importWallet: 'นำเข้ากระเป๋า', enterSeed: 'กรอก Seed Phrase (12 หรือ 24 คำ)', restore: 'กู้คืนกระเป๋า',
+<<<<<<< HEAD
       importExisting: 'นำเข้ากระเป๋าเดิม', connectMetaMask: 'เชื่อมต่อ MetaMask', metaMaskError: 'ไม่พบ MetaMask'
+=======
+      importExisting: 'นำเข้ากระเป๋าเดิม', connectMetaMask: 'เชื่อมต่อ MetaMask', metaMaskError: 'ไม่พบ MetaMask ในเครื่อง!'
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
     }
   };
 
@@ -125,18 +169,39 @@ const Web3WalletApp = () => {
   const [revealSeed, setRevealSeed] = useState(false);
   const [revealKey, setRevealKey] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+<<<<<<< HEAD
   const [isMetaMaskSetup, setIsMetaMaskSetup] = useState(false); // New flag
   const [importInput, setImportInput] = useState('');
 
   // Assets & Data (Initial)
+=======
+  const [importInput, setImportInput] = useState('');
+
+  // Assets & Data
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
   const [assets, setAssets] = useState([
     { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', balance: 0.0000, staked: 0, apy: 3.8, price: 2250.15, change: 2.10, color: 'bg-[#627EEA]', icon: 'Ξ', coingeckoId: 'ethereum', chartData: [2100, 2150, 2120, 2180, 2200, 2250, 2240, 2280, 2250] },
     { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', balance: 0.0000, staked: 0, apy: 0.5, price: 42150.80, change: -0.45, color: 'bg-[#F7931A]', icon: '₿', coingeckoId: 'bitcoin', chartData: [42000, 42500, 42100, 41800, 41500, 41800, 42000, 42200, 42150] }
   ]);
   const [transactions, setTransactions] = useState([]);
+<<<<<<< HEAD
   const [contacts, setContacts] = useState([ { id: 1, name: 'Alice', address: '0x32...4B12' }, { id: 2, name: 'Bob', address: '0x99...C12A' } ]);
   const [nfts] = useState([ { id: 1, name: 'Bored Ape #1234', collection: 'BAYC', image: 'bg-gradient-to-br from-yellow-400 to-orange-500' }, { id: 2, name: 'Azuki #999', collection: 'Azuki', image: 'bg-gradient-to-br from-red-500 to-pink-500' } ]);
   const dApps = [ { id: 1, name: 'Uniswap', url: 'https://app.uniswap.org', icon: '🦄', description: 'Swap tokens' }, { id: 2, name: 'OpenSea', url: 'https://opensea.io', icon: '🌊', description: 'NFT Marketplace' } ];
+=======
+  const [contacts, setContacts] = useState([
+    { id: 1, name: 'Alice', address: '0x32...4B12' },
+    { id: 2, name: 'Bob', address: '0x99...C12A' }
+  ]);
+  const [nfts] = useState([
+    { id: 1, name: 'Bored Ape #1234', collection: 'BAYC', image: 'bg-gradient-to-br from-yellow-400 to-orange-500' },
+    { id: 2, name: 'Azuki #999', collection: 'Azuki', image: 'bg-gradient-to-br from-red-500 to-pink-500' }
+  ]);
+  const dApps = [
+    { id: 1, name: 'Uniswap', url: 'https://app.uniswap.org', icon: '🦄', description: 'Swap tokens' },
+    { id: 2, name: 'OpenSea', url: 'https://opensea.io', icon: '🌊', description: 'NFT Marketplace' }
+  ];
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
 
   // Helper
   const t = (key) => translations[language][key] || key;
@@ -188,6 +253,7 @@ const Web3WalletApp = () => {
     localStorage.setItem('web3_wallet_vault_fixed', JSON.stringify(dataToSave));
   };
 
+<<<<<<< HEAD
   // --- [FIXED] MetaMask Connection Logic ---
   const connectToMetaMask = async () => {
     if (typeof window.ethereum !== 'undefined') {
@@ -195,11 +261,29 @@ const Web3WalletApp = () => {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const account = accounts[0];
         const balanceHex = await window.ethereum.request({ method: 'eth_getBalance', params: [account, "latest"] });
+=======
+  // --- [NEW] MetaMask Connection Logic ---
+  const connectToMetaMask = async () => {
+    if (typeof window.ethereum !== 'undefined') {
+      try {
+        // Request accounts
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const account = accounts[0];
+        
+        // Get Balance
+        const balanceHex = await window.ethereum.request({ 
+            method: 'eth_getBalance', 
+            params: [account, "latest"] 
+        });
+        
+        // Format using Real Ethers
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
         const formattedBalance = ethers.formatEther(balanceHex);
 
         setAddress(account);
         setBalance(formattedBalance);
         setIsMetaMaskConnected(true);
+<<<<<<< HEAD
         const updatedAssets = assets.map(a => a.symbol === 'ETH' ? { ...a, balance: parseFloat(formattedBalance) } : a);
         setAssets(updatedAssets);
 
@@ -214,12 +298,25 @@ const Web3WalletApp = () => {
            saveData({ address: account, balance: formattedBalance }); // Save new connection state
            triggerConfetti();
         }
+=======
+        
+        // Update Assets to reflect real balance for ETH
+        const updatedAssets = assets.map(a => 
+            a.symbol === 'ETH' ? { ...a, balance: parseFloat(formattedBalance) } : a
+        );
+        setAssets(updatedAssets);
+
+        showToast(t('connected'), 'success');
+        setAppState('main_app');
+        triggerConfetti();
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
 
       } catch (error) {
         console.error("MetaMask connection error", error);
         showToast('Connection Failed', 'error');
       }
     } else {
+<<<<<<< HEAD
       // **FALLBACK MODE** for Demo
       if (confirm("ไม่พบ MetaMask! เข้าสู่โหมดสาธิต (Demo) หรือไม่?")) {
           setAddress("0x71C...9A23"); 
@@ -282,6 +379,59 @@ const Web3WalletApp = () => {
     }
   };
 
+=======
+      showToast(t('metaMaskError'), 'error');
+      window.open('https://metamask.io/download/', '_blank');
+    }
+  };
+
+  const createNewWallet = () => {
+    // REAL WALLET GENERATION
+    try {
+        const wallet = ethers.Wallet.createRandom();
+        setAddress(wallet.address);
+        setSeedPhrase(wallet.mnemonic.phrase.split(' '));
+        setBalance('0.0000');
+        setAppState('create_seed');
+    } catch (e) {
+        console.error("Wallet Creation Failed", e);
+        // Fallback for preview without real ethers
+        const wallet = ethers.Wallet.createRandom();
+        setAddress(wallet.address);
+        setSeedPhrase(wallet.mnemonic.phrase.split(' '));
+        setBalance('0.0000');
+        setAppState('create_seed');
+    }
+  };
+
+  const restoreWallet = () => {
+    const phrase = importInput.trim();
+    const words = phrase.split(/\s+/);
+    if (words.length < 12) {
+        showToast('Invalid Seed Phrase (Too short)', 'error');
+        return;
+    }
+    
+    // REAL RESTORE LOGIC
+    try {
+        const wallet = ethers.Wallet.fromPhrase(phrase);
+        setSeedPhrase(words);
+        setAddress(wallet.address);
+        setBalance('0.0000'); // Note: Need a provider to fetch real balance here
+        
+        // Try to fetch balance if we have a provider
+        // const provider = new ethers.JsonRpcProvider(DEFAULT_RPC_URL);
+        // provider.getBalance(wallet.address).then((bal) => { ...
+
+        saveData({ seed: phrase, address: wallet.address });
+        showToast('Wallet Imported Successfully!');
+        setAppState('main_app');
+    } catch(e) {
+        showToast('Invalid Seed Phrase', 'error');
+    }
+  };
+
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
   const handlePinInput = (num) => {
     vibrate(10);
     if (tempPin.length < 4) {
@@ -289,6 +439,7 @@ const Web3WalletApp = () => {
       setTempPin(newPin);
       if (newPin.length === 4) {
         if (appState === 'setup_pin') {
+<<<<<<< HEAD
           // **Set PIN State**
           setUserPin(newPin);
           setTempPin('');
@@ -312,12 +463,18 @@ const Web3WalletApp = () => {
              setAppState('main_app');
              triggerConfetti();
           } else if (isImporting) {
+=======
+          setUserPin(newPin);
+          setTempPin('');
+          showToast('PIN Set Successfully');
+          if (isImporting) {
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
              setAppState('import_seed');
           } else {
              createNewWallet();
           }
         } else if (appState === 'login_pin') {
-          if (newPin === userPin) { setAppState('main_app'); setTempPin(''); fetchLivePrices(); } 
+          if (newPin === userPin) { setAppState('main_app'); setTempPin(''); } 
           else { showToast('Incorrect PIN', 'error'); setTempPin(''); vibrate([50, 50, 50]); }
         } else if (modalView === 'auth_export') {
           if (newPin === userPin) { setModalView(null); setRevealKey(true); setTempPin(''); }
@@ -327,7 +484,11 @@ const Web3WalletApp = () => {
     }
   };
 
+<<<<<<< HEAD
   // --- UI Helpers ---
+=======
+  // --- UI Helpers (Simplified) ---
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
   const showToast = (msg, type = 'success') => { setNotification({ msg, type }); vibrate(type === 'error' ? [50, 50, 50] : 20); setTimeout(() => setNotification(null), 3000); };
   const handleCopy = (text) => { setCopied(true); try { navigator.clipboard.writeText(text); } catch(e){} showToast(t('copyClipboard')); setTimeout(() => setCopied(false), 2000); };
   const formatMoney = (amount) => `${currency === 'THB' ? '฿' : '$'}${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
@@ -336,6 +497,7 @@ const Web3WalletApp = () => {
   const toggleCurrency = () => { const newCurrency = currency === 'USD' ? 'THB' : 'USD'; setCurrency(newCurrency); saveData({ currency: newCurrency }); vibrate(10); };
   const toggleLanguage = () => { const newLang = language === 'en' ? 'th' : 'en'; setLanguage(newLang); saveData({ language: newLang }); vibrate(10); };
   const getThemeGradient = () => { switch(themeColor) { case 'emerald': return 'from-emerald-600 via-teal-600 to-cyan-800'; case 'violet': return 'from-violet-600 via-purple-600 to-fuchsia-800'; case 'orange': return 'from-orange-600 via-red-600 to-rose-800'; default: return 'from-blue-600 via-indigo-600 to-violet-800'; } };
+<<<<<<< HEAD
   const getThemeColor = () => { switch(themeColor) { case 'emerald': return 'text-emerald-500'; case 'violet': return 'text-violet-500'; case 'orange': return 'text-orange-500'; default: return 'text-blue-500'; } };
   const getThemeBg = () => { switch(themeColor) { case 'emerald': return 'bg-emerald-600'; case 'violet': return 'bg-violet-600'; case 'orange': return 'bg-orange-600'; default: return 'bg-blue-600'; } };
 
@@ -367,6 +529,63 @@ const Web3WalletApp = () => {
   const checkSeedVerification = () => { saveData(); showToast('Wallet Verified & Created!'); setTimeout(() => setAppState('main_app'), 1000); };
   const fetchLivePrices = async () => { if (!isOnline) return; setIsLoadingPrices(true); try { const ids = assets.map(a => a.coingeckoId).join(','); const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,thb&include_24hr_change=true`); const data = await response.json(); if (data) { const updatedAssets = assets.map(asset => { const apiData = data[asset.coingeckoId]; if (apiData) { const newPrice = currency === 'THB' ? apiData.thb : apiData.usd; const newChange = apiData[`${currency.toLowerCase()}_24h_change`] || apiData.usd_24h_change; const newChart = [...asset.chartData.slice(1), newPrice]; return { ...asset, price: newPrice, change: parseFloat(newChange.toFixed(2)), chartData: newChart }; } return asset; }); setAssets(updatedAssets); setLastUpdated(new Date().toLocaleTimeString()); saveData({ assets: updatedAssets }); } } catch (error) { console.error("Failed to fetch prices", error); } finally { setIsLoadingPrices(false); setNetworkLatency(Math.floor(Math.random() * 50) + 20); } };
   useEffect(() => { if (appState === 'main_app') { fetchLivePrices(); const interval = setInterval(fetchLivePrices, 60000); return () => clearInterval(interval); } }, [appState, currency, isOnline]);
+=======
+  
+  // --- Transaction Logic (Updated for MetaMask) ---
+  const executeSendTransaction = async () => {
+    if (!sendAmount || !sendAddress) return;
+    const amountNum = parseFloat(sendAmount);
+    
+    // Check balance first
+    const currentAssetBalance = assets.find(a => a.symbol === sendAsset.symbol)?.balance || 0;
+    if (amountNum > currentAssetBalance) { 
+        showToast(t('insufficientBalance'), 'error'); 
+        return; 
+    }
+    
+    setIsSending(true);
+    
+    try {
+        if (isMetaMaskConnected && typeof window.ethereum !== 'undefined') {
+            // Real MetaMask Transaction
+            const weiAmount = ethers.parseEther(sendAmount);
+            
+            await window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [{
+                    from: address,
+                    to: sendAddress,
+                    value: weiAmount.toString(16),
+                }],
+            });
+            
+            showToast('Transaction submitted to MetaMask!', 'success');
+        } else {
+            // Simulation
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            showToast(t('sentSuccess'));
+        }
+
+        // Update local state for immediate feedback (for simulation or real)
+        const updatedAssets = assets.map(a => a.id === sendAsset.id ? { ...a, balance: a.balance - amountNum } : a);
+        setAssets(updatedAssets);
+        const newBalanceStr = (parseFloat(balance) - amountNum).toFixed(4);
+        setBalance(newBalanceStr);
+        saveData({ assets: updatedAssets, balance: newBalanceStr });
+        
+        setIsSending(false); setModalView(null); setSendAmount(''); setSendAddress(''); 
+        triggerConfetti();
+        
+    } catch (error) {
+        console.error(error);
+        setIsSending(false);
+        showToast('Transaction Failed', 'error');
+    }
+  };
+
+  const executeSwap = () => { setIsSwapping(true); setTimeout(() => { setIsSwapping(false); setModalView(null); showToast(t('swappedSuccess')); triggerConfetti(); }, 2000); };
+  const executeStake = () => { setIsStaking(true); setTimeout(() => { setIsStaking(false); setStakeAmount(''); showToast(t('stakedSuccess')); triggerConfetti(); }, 2000); };
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
 
   // --- Components ---
   const ActionButton = ({ icon: Icon, label, onClick, primary }) => (<button onClick={() => {vibrate(10); onClick();}} className="flex flex-col items-center justify-center space-y-2 group"><div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 transform group-active:scale-95 shadow-lg ${primary ? `bg-gradient-to-tr from-[#E0E7FF] to-[#FFFFFF] text-black shadow-white/20` : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20'}`}><Icon size={24} className={primary ? 'text-black' : 'text-white'} strokeWidth={primary ? 2.5 : 2} /></div><span className="text-xs font-medium text-slate-300 tracking-wide group-hover:text-white transition-colors">{label}</span></button>);
@@ -388,7 +607,16 @@ const Web3WalletApp = () => {
            <div className="h-full flex flex-col justify-end p-8 bg-[#0B0E14] relative overflow-hidden">
              <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[60%] bg-gradient-to-b from-blue-600/20 to-transparent blur-[80px] rounded-full pointer-events-none"></div>
              <div className="relative z-10 mb-8"><Sparkles size={40} className="text-white mb-4"/><h1 className="text-4xl font-bold text-white">Web3<br/>Wallet</h1></div>
+<<<<<<< HEAD
              <button onClick={connectToMetaMask} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold mb-3 hover:scale-105 transition flex items-center justify-center space-x-2"><LinkIcon size={20}/> <span>{t('connectMetaMask')}</span></button>
+=======
+             
+             {/* Connect MetaMask Button */}
+             <button onClick={connectToMetaMask} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold mb-3 hover:scale-105 transition flex items-center justify-center space-x-2">
+                <LinkIcon size={20}/> <span>{t('connectMetaMask')}</span>
+             </button>
+
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
              <button onClick={() => { setIsImporting(false); setAppState('setup_pin'); }} className="w-full py-4 bg-white text-black rounded-2xl font-bold mb-3 hover:scale-105 transition">Create New Wallet</button>
              <button onClick={() => { setIsImporting(true); setAppState('setup_pin'); }} className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition">{t('importExisting')}</button>
            </div>
@@ -403,8 +631,11 @@ const Web3WalletApp = () => {
                {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => handlePinInput(n)} className="w-16 h-16 rounded-full bg-white/10 text-white text-xl hover:bg-white/20">{n}</button>)}
                <div/> <button onClick={() => handlePinInput(0)} className="w-16 h-16 rounded-full bg-white/10 text-white text-xl">0</button> <button onClick={() => setTempPin(p=>p.slice(0,-1))} className="w-16 h-16 rounded-full text-rose-500 flex items-center justify-center"><Delete/></button>
              </div>
+<<<<<<< HEAD
              {/* Emergency Reset for stuck users */}
              {appState === 'login_pin' && <button onClick={clearWallet} className="mt-auto text-xs text-rose-500 hover:text-white transition py-4">{t('resetWallet')}</button>}
+=======
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
            </div>
         )}
 
@@ -418,10 +649,12 @@ const Web3WalletApp = () => {
         )}
 
         {appState === 'create_seed' && (<div className="h-full flex flex-col p-8 bg-[#0B0E14]"><h2 className="text-2xl font-bold text-white mb-4">{t('backup')}</h2><div className="grid grid-cols-3 gap-2 mb-8">{seedPhrase.map((w, i) => <div key={i} className="bg-white/5 p-2 rounded text-xs text-center text-slate-300">{i+1}. {w}</div>)}</div><button onClick={() => handleCopy(seedPhrase.join(' '))} className="w-full py-4 bg-white/10 text-white rounded-2xl font-bold mb-4 border border-white/10">{copied ? <Check className="mx-auto"/> : t('copyClipboard')}</button><button onClick={() => setAppState('verify_seed')} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold mt-auto">{t('nextStep')}</button></div>)}
+        
         {appState === 'verify_seed' && (<div className="h-full flex flex-col p-8 bg-[#0B0E14]"><h2 className="text-2xl font-bold text-white mb-4">{t('verify')}</h2><div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[120px] mb-8 flex flex-wrap content-start gap-2 shadow-inner">{verifySelection.length === 0 && <span className="text-slate-600 text-sm w-full text-center mt-8">Tap words in order</span>}{verifySelection.map((word, index) => (<button key={index} onClick={() => setVerifySelection(verifySelection.filter(w => w !== word))} className="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg animate-scale-in">{index + 1}. {word}</button>))}</div><div className="flex flex-wrap gap-2 justify-center">{[...seedPhrase].sort(() => 0.5 - Math.random()).map((word, index) => {const isSelected = verifySelection.includes(word);return (<button key={index} onClick={() => !isSelected && setVerifySelection([...verifySelection, word])} disabled={isSelected} className={`text-sm font-medium px-4 py-2 rounded-xl border transition-all ${isSelected ? 'opacity-0' : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/20'}`}>{word}</button>);})}</div><button onClick={checkSeedVerification} disabled={verifySelection.length !== 12} className={`w-full py-4 mt-auto rounded-2xl font-bold transition-all ${verifySelection.length === 12 ? 'bg-blue-600 text-white' : 'bg-slate-500 text-slate-500 cursor-not-allowed'}`}>{t('confirm')}</button></div>)}
 
         {appState === 'main_app' && (
            <div className="h-full flex flex-col bg-[#0B0E14] relative">
+<<<<<<< HEAD
               <div className="p-6 flex justify-between items-center"><div className="flex items-center space-x-2 bg-white/5 px-3 py-1 rounded-full border border-white/10"><div className="w-2 h-2 bg-green-500 rounded-full"></div><span className="text-xs text-slate-300">{isMetaMaskConnected ? 'MetaMask' : 'Ethereum'}</span></div><div className="flex space-x-4"><button onClick={() => setModalView('scanner')} className="p-2 rounded-full hover:bg-white/5"><ScanLine size={20} className="text-slate-300" /></button><button onClick={() => setModalView('notifications')} className="relative p-2 rounded-full hover:bg-white/5 transition"><Bell size={20} className="text-slate-300" /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B0E14]"></span></button></div></div>
               <div className="px-6 mb-8 text-center"><div className="text-slate-400 text-xs uppercase tracking-wider mb-1">{t('totalBalance')}</div><h1 className="text-4xl font-bold text-white mb-4">{showBalance ? formatMoney(getTotalBalance()) : '****'}</h1><div className="flex justify-center space-x-4"><button onClick={() => setModalView('send')} className="flex flex-col items-center"><div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mb-1"><ArrowUpRight className="text-white"/></div><span className="text-xs text-slate-300">{t('send')}</span></button><button onClick={() => setModalView('receive')} className="flex flex-col items-center"><div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mb-1"><ArrowDownRight className="text-white"/></div><span className="text-xs text-slate-300">{t('receive')}</span></button></div></div>
               <div className="flex-1 bg-white/5 rounded-t-[32px] p-6 border-t border-white/10"><h3 className="text-white font-bold mb-4">{t('assets')}</h3>{assets.map(asset => <AssetRow key={asset.id} asset={asset} onClick={()=>{}} />)}</div>
@@ -435,6 +668,47 @@ const Web3WalletApp = () => {
         
         {viewAsset && <AssetDetailView asset={viewAsset} onClose={() => setViewAsset(null)} />}
         {activeDapp && <DappBrowser dapp={activeDapp} onClose={() => setActiveDapp(null)} />}
+=======
+              {/* Header */}
+              <div className="p-6 flex justify-between items-center">
+                 <div className="flex items-center space-x-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs text-slate-300">{isMetaMaskConnected ? 'MetaMask' : 'Ethereum'}</span>
+                 </div>
+                 <div className="flex space-x-4"><button onClick={() => setModalView('scanner')} className="p-2 rounded-full hover:bg-white/5 transition"><ScanLine size={20} className="text-slate-300" /></button><button onClick={() => setModalView('notifications')} className="relative p-2 rounded-full hover:bg-white/5 transition"><Bell size={20} className="text-slate-300" /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B0E14]"></span></button></div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar relative z-10">
+                {activeTab === 'home' && <HomeTab />}
+                {activeTab === 'discover' && <DiscoverTab />}
+                {/* NFTs and Settings Tabs Hidden for brevity but logic is preserved */}
+                {activeTab === 'nfts' && (<div className="px-6 pt-6 mb-28 animate-fade-in"><h2 className="text-3xl font-bold text-white mb-6">{t('collectibles')}</h2><div className="grid grid-cols-2 gap-4">{nfts.map(nft => (<div key={nft.id} className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden hover:bg-white/10 transition group"><div className={`h-32 w-full ${nft.image} group-hover:scale-105 transition-transform duration-500`}></div><div className="p-3"><h4 className="font-bold text-white text-sm">{nft.name}</h4><p className="text-xs text-slate-400">{nft.collection}</p></div></div>))}</div></div>)}
+                {activeTab === 'settings' && <SettingsTab />}
+              </div>
+
+              {/* Footer Nav */}
+              <div className="absolute bottom-6 left-6 right-6 z-30">
+                <div className="bg-[#1A1F2E]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex justify-around items-center h-[70px] px-2">
+                  <NavButton id="home" icon={Wallet} label={t('general')} />
+                  <NavButton id="discover" icon={Compass} label={t('discover')} />
+                  <div className="relative -top-6"><button onClick={() => setModalView('swap')} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.5)] border-4 border-[#0B0E14] transform transition hover:scale-105 active:scale-95 group bg-gradient-to-tr ${getThemeGradient()}`}><ArrowRightLeft size={28} className="text-white group-hover:rotate-180 transition-transform duration-500" /></button></div>
+                  <NavButton id="nfts" icon={Layers} label="NFTs" />
+                  <NavButton id="settings" icon={Settings} label={t('settings')} />
+                </div>
+             </div>
+           </div>
+        )}
+
+        {/* Modals - Simplified for brevity (Reuse from previous steps) */}
+        {modalView === 'send' && (<div className="absolute inset-0 z-50 bg-[#0B0E14] flex flex-col p-6 animate-slide-up"><div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-white">{t('send')}</h2><button onClick={() => setModalView(null)}><X className="text-white"/></button></div><div className="space-y-6"><div><label className="text-xs text-slate-400">To</label><input value={sendAddress} onChange={e=>setSendAddress(e.target.value)} className="w-full bg-white/5 p-2 rounded text-white"/></div><div><label className="text-xs text-slate-400">Amount</label><input value={sendAmount} onChange={e=>setSendAmount(e.target.value)} className="w-full bg-white/5 p-2 rounded text-white"/></div><button onClick={executeSendTransaction} className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white">{isSending ? t('processing') : t('confirm')}</button></div></div>)}
+        {modalView === 'settings' && (<div className="absolute inset-0 z-50 bg-[#0B0E14] flex flex-col p-6 animate-slide-up"><div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-white">{t('settings')}</h2><button onClick={() => setModalView(null)}><X className="text-white"/></button></div><button onClick={()=>{localStorage.removeItem('web3_wallet_vault_real'); window.location.reload();}} className="w-full py-4 bg-rose-500/10 text-rose-500 rounded-xl font-bold">{t('resetWallet')}</button><div className="mt-4 text-center"><button onClick={toggleLanguage} className="text-blue-400 text-sm">Switch Language ({language})</button></div></div>)}
+
+        {/* Asset Detail Overlay */}
+        {viewAsset && <AssetDetailView asset={viewAsset} onClose={() => setViewAsset(null)} />}
+        {activeDapp && <DappBrowser dapp={activeDapp} onClose={() => setActiveDapp(null)} />}
+        
+>>>>>>> cd4f48f0e7a016316c9c682a45d19a397740acd9
       </div>
     </div>
   );
