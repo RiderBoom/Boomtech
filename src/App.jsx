@@ -1,506 +1,626 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
+// Removed external ethers import to fix build error
 import { 
-  Wallet, ArrowRightLeft, Send, CreditCard, RefreshCw, Copy, Check, ChevronDown, Bell, TrendingUp, ScanLine, 
-  UserCircle, Eye, EyeOff, MoreHorizontal, BarChart3, ArrowUpRight, ArrowDownRight, Settings, AlertTriangle, 
-  ChevronRight, Lock, Delete, X, QrCode, Share2, Layers, Sparkles, Image as ImageIcon, Shield, LogOut, Coins, 
-  Globe, Wifi, ChevronLeft, Zap, Plus, Fingerprint, Percent, Key, PieChart, Compass, BookUser, ExternalLink,
-  Download, Smartphone, WifiOff, FileInput, Link as LinkIcon
-} from 'lucide-react';
+  Wallet, 
+  Bell, 
+  Download, 
+  Upload, 
+  RefreshCw, 
+  TrendingUp, 
+  AlertTriangle, 
+  History,
+  CheckCircle,
+  XCircle,
+  Moon,
+  Sun,
+  DollarSign,
+  Coins // เพิ่มไอคอนเหรียญ
+} from "lucide-react";
 
-// --- [IMPORTANT] Production Setup Instructions ---
-// 1. Install ethers: npm install ethers
-// 2. UNCOMMENT the line below when running locally or on Vercel:
-// import { ethers } from 'ethers'; 
-
-// --- [PREVIEW FIX] Mock Ethers for Canvas Display Only ---
-// DELETE this section when using real 'ethers' import above
-const ethers = {
-  formatEther: (wei) => {
-    try {
-      return (parseFloat(wei) / 1e18).toFixed(4);
-    } catch (e) { return "0.0000"; }
-  },
-  parseEther: (eth) => {
-    try {
-      return BigInt(Math.floor(parseFloat(eth) * 1e18));
-    } catch (e) { return BigInt(0); }
-  },
-  JsonRpcProvider: class { 
-    getBalance() { return Promise.resolve(BigInt(0)); } 
-  },
-  Wallet: { 
-    createRandom: () => ({ 
-      address: '0x' + Array(40).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join(''), 
-      mnemonic: { phrase: 'abandon ability able about above absent absorb abstract absurd abuse access accident' } 
-    }),
-    fromPhrase: () => ({ 
-      address: '0xImported...' + Math.floor(Math.random() * 1000),
-      connect: () => ({ 
-        address: '0x...', 
-        sendTransaction: () => Promise.resolve({ hash: '0x123...', wait: () => Promise.resolve() }) 
-      }) 
-    })
-  }
-};
-// --------------------------------------------------------
-
-// --- [CRITICAL] Real Blockchain Configuration ---
-const SMART_CONTRACT_ADDRESS = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4";
-const DEFAULT_RPC_URL = "https://rpc.ankr.com/eth"; 
-
-// --- Confetti Component ---
-const Confetti = () => {
-  const [particles, setParticles] = useState([]);
-  useEffect(() => {
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-    const newParticles = Array.from({ length: 50 }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: -10 - Math.random() * 20,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      size: 5 + Math.random() * 5,
-      speed: 2 + Math.random() * 3,
-      angle: Math.random() * 360,
-    }));
-    setParticles(newParticles);
-  }, []);
-  return (
-    <div className="absolute inset-0 pointer-events-none z-[60] overflow-hidden">
-      {particles.map((p) => (
-        <div key={p.id} className="absolute rounded-sm animate-fall" style={{ left: `${p.x}%`, top: `${p.y}%`, width: `${p.size}px`, height: `${p.size}px`, backgroundColor: p.color, animationDuration: `${2 + Math.random()}s` }} />
-      ))}
-      <style jsx>{`@keyframes fall { to { transform: translateY(100vh) rotate(720deg); } } .animate-fall { animation-name: fall; animation-timing-function: linear; animation-fill-mode: forwards; }`}</style>
-    </div>
-  );
-};
+// ✅ ส่วนที่ 1: กำหนด Address ของ Smart Contract ที่ต้องการเชื่อมต่อ
+// ตัวอย่าง: USDT Smart Contract บน Ethereum Mainnet
+const USDT_CONTRACT_ADDRESS = "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4"; 
 
 const Web3WalletApp = () => {
-  // --- Translations ---
-  const translations = {
-    en: {
-      totalBalance: 'Total Balance', receive: 'Receive', send: 'Send', swap: 'Swap', buy: 'Buy', assets: 'Assets',
-      discover: 'Discover', collectibles: 'Collectibles', settings: 'Settings', general: 'General', currency: 'Currency',
-      language: 'Language', security: 'Security', biometric: 'Biometric ID', recoveryPhrase: 'Recovery Phrase',
-      exportKey: 'Export Private Key', resetWallet: 'Reset Wallet', hide: 'Hide', show: 'Show', confirm: 'Confirm',
-      cancel: 'Cancel', accounts: 'Accounts', activity: 'Activity', staking: 'Stake & Earn', stakeNow: 'Stake Now',
-      stakingDesc: 'Lock your assets to earn APY.', scanQr: 'Scan QR Code', connect: 'Connect', connected: 'Connected',
-      notifications: 'Notifications', welcomeBack: 'Welcome Back', enterPin: 'Enter your PIN to access assets',
-      createPin: 'Create PIN', setupPinDesc: 'Secure your wallet with a 4-digit code', backup: 'Back up', verify: 'Verify',
-      nextStep: 'Next Step', insufficientBalance: 'Insufficient Balance', sentSuccess: 'Transaction Sent!',
-      swappedSuccess: 'Swapped Success!', stakedSuccess: 'Staked Successfully!', copyClipboard: 'Copied to clipboard',
-      secretZone: 'Secret Zone', warning: 'WARNING', privateKeyWarning: 'Never share your Private Key.', theme: 'Theme Color',
-      analytics: 'Analytics', assetAllocation: 'Asset Allocation', pnl: '7D Profit & Loss', contacts: 'Contacts',
-      addContact: 'Add Contact', browser: 'DApp Browser', visit: 'Visit', installApp: 'Install App', offline: 'Offline Mode',
-      processing: 'Processing...', importWallet: 'Import Wallet', enterSeed: 'Enter Seed Phrase (12/24 words)', restore: 'Restore Wallet',
-      importExisting: 'Import Existing', connectMetaMask: 'Connect MetaMask', metaMaskError: 'MetaMask not installed!'
-    },
-    th: {
-      totalBalance: 'ยอดเงินรวม', receive: 'รับเงิน', send: 'โอนเงิน', swap: 'แลกเปลี่ยน', buy: 'ซื้อเหรียญ', assets: 'สินทรัพย์',
-      discover: 'ค้นหา', collectibles: 'ของสะสม (NFT)', settings: 'ตั้งค่า', general: 'ทั่วไป', currency: 'สกุลเงิน',
-      language: 'ภาษา', security: 'ความปลอดภัย', biometric: 'สแกนนิ้ว/ใบหน้า', recoveryPhrase: 'วลีช่วยจำ (Seed)',
-      exportKey: 'ส่งออก Private Key', resetWallet: 'ล้างกระเป๋า', hide: 'ซ่อน', show: 'ดู', confirm: 'ยืนยัน',
-      cancel: 'ยกเลิก', accounts: 'บัญชี', activity: 'รายการล่าสุด', staking: 'ฝากกินดอกเบี้ย', stakeNow: 'ฝากเลย',
-      stakingDesc: 'ล็อคเหรียญเพื่อรับผลตอบแทนรายปี', scanQr: 'สแกน QR', connect: 'เชื่อมต่อ', connected: 'เชื่อมต่อแล้ว',
-      notifications: 'การแจ้งเตือน', welcomeBack: 'ยินดีต้อนรับกลับ', enterPin: 'กรอกรหัส PIN เพื่อเข้าใช้งาน',
-      createPin: 'ตั้งรหัส PIN', setupPinDesc: 'ปกป้องกระเป๋าด้วยรหัส 4 หลัก', backup: 'สำรองข้อมูล', verify: 'ยืนยัน',
-      nextStep: 'ถัดไป', insufficientBalance: 'ยอดเงินไม่พอ', sentSuccess: 'ทำรายการสำเร็จ!', swappedSuccess: 'แลกเปลี่ยนสำเร็จ!',
-      stakedSuccess: 'ฝากเหรียญสำเร็จ!', copyClipboard: 'คัดลอกแล้ว', secretZone: 'พื้นที่ความลับ', warning: 'คำเตือน',
-      privateKeyWarning: 'ห้ามแชร์ Private Key ให้ใครเด็ดขาด', theme: 'สีธีม', analytics: 'วิเคราะห์พอร์ต',
-      assetAllocation: 'สัดส่วนสินทรัพย์', pnl: 'กำไร/ขาดทุน 7 วัน', contacts: 'รายชื่อผู้ติดต่อ', addContact: 'เพิ่มรายชื่อ',
-      browser: 'เว็บ 3.0', visit: 'เข้าชม', installApp: 'ติดตั้งแอป', offline: 'โหมดออฟไลน์',
-      processing: 'กำลังประมวลผล...', importWallet: 'นำเข้ากระเป๋า', enterSeed: 'กรอก Seed Phrase (12 หรือ 24 คำ)', restore: 'กู้คืนกระเป๋า',
-      importExisting: 'นำเข้ากระเป๋าเดิม', connectMetaMask: 'เชื่อมต่อ MetaMask', metaMaskError: 'ไม่พบ MetaMask ในเครื่อง!'
-    }
-  };
-
-  // --- App State ---
-  const [appState, setAppState] = useState('loading'); 
-  const [activeTab, setActiveTab] = useState('home'); 
-  const [modalView, setModalView] = useState(null); 
-  const [notification, setNotification] = useState(null);
-  const [selectedTx, setSelectedTx] = useState(null); 
-  const [viewAsset, setViewAsset] = useState(null);
-  const [activeDapp, setActiveDapp] = useState(null);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  // --- Wallet Data ---
-  const [userPin, setUserPin] = useState(''); 
-  const [tempPin, setTempPin] = useState('');
-  const [showBalance, setShowBalance] = useState(true);
-  const [currency, setCurrency] = useState('USD'); 
-  const [language, setLanguage] = useState('en');
-  const [themeColor, setThemeColor] = useState('blue');
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [currentNetwork, setCurrentNetwork] = useState({ id: 'eth', name: 'Ethereum', color: 'bg-[#627EEA]', rpc: DEFAULT_RPC_URL });
-  const [networkLatency, setNetworkLatency] = useState(45);
-  const [connectedDapp, setConnectedDapp] = useState(null); 
-  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  // --- State ---
+  const [address, setAddress] = useState("");
+  const [balance, setBalance] = useState("0.0000");
+  const [usdtBalance, setUsdtBalance] = useState("0.00"); // ✅ State สำหรับเก็บค่าจาก Contract
+  const [isConnected, setIsConnected] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  
+  // Market Data
+  const [tokenPrices, setTokenPrices] = useState({
+    ethereum: { usd: 0, change: 0 },
+    bitcoin: { usd: 0, change: 0 },
+    dai: { usd: 0, change: 0 },
+    solana: { usd: 0, change: 0 },
+    binancecoin: { usd: 0, change: 0 },
+    dogecoin: { usd: 0, change: 0 },
+  });
+  const [loadingPrices, setLoadingPrices] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Wallet Core
-  const [address, setAddress] = useState('');
-  const [balance, setBalance] = useState('0.0000');
-  const [isMetaMaskConnected, setIsMetaMaskConnected] = useState(false);
+  // Alerts
+  const [alerts, setAlerts] = useState({
+    ethereum: 3500,
+    bitcoin: 65000,
+    dai: 1.05,
+    solana: 150,
+    binancecoin: 600,
+    dogecoin: 0.20
+  });
+  const [triggered, setTriggered] = useState({});
+  const [alertHistory, setAlertHistory] = useState([]);
+  
+  // Notification Permission
+  const [notifPermission, setNotifPermission] = useState("default");
 
-  // Logic State
-  const [swapFrom, setSwapFrom] = useState(null);
-  const [swapTo, setSwapTo] = useState(null);
-  const [swapAmount, setSwapAmount] = useState('');
-  const [isSwapping, setIsSwapping] = useState(false);
-  const [sendAsset, setSendAsset] = useState(null);
-  const [sendAmount, setSendAmount] = useState('');
-  const [sendAddress, setSendAddress] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [stakeAmount, setStakeAmount] = useState('');
-  const [isStaking, setIsStaking] = useState(false);
-  const [seedPhrase, setSeedPhrase] = useState([]);
-  const [verifySelection, setVerifySelection] = useState([]);
-  const [copied, setCopied] = useState(false);
-  const [revealSeed, setRevealSeed] = useState(false);
-  const [revealKey, setRevealKey] = useState(false);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isMetaMaskSetup, setIsMetaMaskSetup] = useState(false); // New flag
-  const [importInput, setImportInput] = useState('');
+  // --- Effects ---
 
-  // Assets & Data (Initial)
-  const [assets, setAssets] = useState([
-    { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', balance: 0.0000, staked: 0, apy: 3.8, price: 2250.15, change: 2.10, color: 'bg-[#627EEA]', icon: 'Ξ', coingeckoId: 'ethereum', chartData: [2100, 2150, 2120, 2180, 2200, 2250, 2240, 2280, 2250] },
-    { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', balance: 0.0000, staked: 0, apy: 0.5, price: 42150.80, change: -0.45, color: 'bg-[#F7931A]', icon: '₿', coingeckoId: 'bitcoin', chartData: [42000, 42500, 42100, 41800, 41500, 41800, 42000, 42200, 42150] }
-  ]);
-  const [transactions, setTransactions] = useState([]);
-  const [contacts, setContacts] = useState([ { id: 1, name: 'Alice', address: '0x32...4B12' }, { id: 2, name: 'Bob', address: '0x99...C12A' } ]);
-  const [nfts] = useState([ { id: 1, name: 'Bored Ape #1234', collection: 'BAYC', image: 'bg-gradient-to-br from-yellow-400 to-orange-500' }, { id: 2, name: 'Azuki #999', collection: 'Azuki', image: 'bg-gradient-to-br from-red-500 to-pink-500' } ]);
-  const dApps = [ { id: 1, name: 'Uniswap', url: 'https://app.uniswap.org', icon: '🦄', description: 'Swap tokens' }, { id: 2, name: 'OpenSea', url: 'https://opensea.io', icon: '🌊', description: 'NFT Marketplace' } ];
-
-  // Helper
-  const t = (key) => translations[language][key] || key;
-  const vibrate = (pattern = 10) => { if (navigator.vibrate) navigator.vibrate(pattern); };
-  const triggerConfetti = () => { setShowConfetti(true); vibrate([50, 100, 50]); setTimeout(() => setShowConfetti(false), 3000); };
-
-  // --- Initial Load ---
   useEffect(() => {
-    const savedData = localStorage.getItem('web3_wallet_vault_real');
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setUserPin(parsed.pin);
-      if(parsed.assets) setAssets(parsed.assets);
-      if(parsed.transactions) setTransactions(parsed.transactions);
-      setSeedPhrase(parsed.seed ? parsed.seed.split(' ') : []);
-      setCurrency(parsed.currency || 'USD');
-      setLanguage(parsed.language || 'en');
-      setThemeColor(parsed.themeColor || 'blue');
-      if(parsed.address) setAddress(parsed.address);
-      if(parsed.balance) setBalance(parsed.balance);
-      setAppState('login_pin'); 
-    } else {
-      setTimeout(() => setAppState('onboarding'), 1500);
+    if ("Notification" in window) {
+      setNotifPermission(Notification.permission);
     }
-    window.addEventListener('online', () => setIsOnline(true));
-    window.addEventListener('offline', () => setIsOnline(false));
-    return () => { window.removeEventListener('online', () => setIsOnline(true)); window.removeEventListener('offline', () => setIsOnline(false)); };
   }, []);
 
-  // --- Functions ---
-  const saveData = (newData = {}) => {
-    const dataToSave = {
-      pin: userPin,
-      assets: newData.assets || assets,
-      transactions: newData.transactions || transactions,
-      seed: seedPhrase.join(' '),
-      currency: newData.currency || currency,
-      language: newData.language || language,
-      themeColor: newData.themeColor || themeColor,
-      address: address,
-      balance: balance,
-      ...newData
-    };
-    localStorage.setItem('web3_wallet_vault_real', JSON.stringify(dataToSave));
+  // Auto-check prices every 30s
+  useEffect(() => {
+    getMultiTokenPrices(); // Initial fetch
+    const interval = setInterval(() => {
+      getMultiTokenPrices();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []); 
+
+  useEffect(() => {
+    checkAlerts();
+  }, [tokenPrices, alerts]);
+
+  // --- Actions ---
+
+  // ✅ ส่วนที่ 2: ฟังก์ชันอ่านค่าจาก Smart Contract (ไม่ต้องใช้ ABI เต็มๆ ถ้าอ่านค่าง่ายๆ)
+  const getSmartContractBalance = async (userAddress) => {
+    try {
+      // 1. สร้าง Data สำหรับเรียกฟังก์ชัน balanceOf(address)
+      // Function Selector ของ balanceOf คือ '0x70a08231'
+      const functionSelector = "0x70a08231";
+      // แปลง Address เป็น 64 ตัวอักษร (Padding)
+      const paddedAddress = userAddress.substring(2).padStart(64, "0");
+      const data = functionSelector + paddedAddress;
+
+      // 2. ส่งคำสั่ง eth_call ไปยัง Blockchain
+      const balanceHex = await window.ethereum.request({
+        method: "eth_call",
+        params: [{
+          to: USDT_CONTRACT_ADDRESS, // ส่งไปที่ Smart Contract Address
+          data: data // ข้อมูลที่เข้ารหัสแล้ว
+        }, "latest"]
+      });
+
+      // 3. แปลงผลลัพธ์ (Hex -> Decimal)
+      // USDT มีทศนิยม 6 ตำแหน่ง (Decimals = 6)
+      const tokenValue = parseInt(balanceHex, 16) / 1000000; 
+      
+      setUsdtBalance(tokenValue.toFixed(2));
+      console.log("USDT Balance:", tokenValue);
+
+    } catch (error) {
+      console.error("Error reading smart contract:", error);
+      setUsdtBalance("Error");
+    }
   };
 
-  // --- [NEW] MetaMask Connection Logic ---
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือนบนเดสก์ท็อป");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotifPermission(permission);
+  };
+
   const connectToMetaMask = async () => {
-    if (typeof window.ethereum !== 'undefined') {
+    setIsDemoMode(false);
+    if (typeof window.ethereum !== "undefined") {
       try {
-        // Request accounts
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const account = accounts[0];
-        
-        // Get Balance
-        const balanceHex = await window.ethereum.request({ 
-            method: 'eth_getBalance', 
-            params: [account, "latest"] 
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts",
         });
-        
-        // Format using Real Ethers
-        const formattedBalance = ethers.formatEther(balanceHex);
+        const addr = accounts[0];
 
-        setAddress(account);
-        setBalance(formattedBalance);
-        setIsMetaMaskConnected(true);
-        
-        // Update Assets to reflect real balance for ETH
-        const updatedAssets = assets.map(a => 
-            a.symbol === 'ETH' ? { ...a, balance: parseFloat(formattedBalance) } : a
-        );
-        setAssets(updatedAssets);
+        let balanceEth = "0.0000";
+        try {
+           const balanceHex = await window.ethereum.request({
+             method: "eth_getBalance",
+             params: [addr, "latest"],
+           });
+           balanceEth = (parseInt(balanceHex, 16) / 1e18).toFixed(4);
+        } catch (e) {
+          console.warn("เกิดข้อผิดพลาดในการดึงยอดเงิน", e);
+        }
 
-        showToast(t('connected'), 'success');
-        setAppState('main_app');
-        triggerConfetti();
+        setAddress(addr);
+        setBalance(balanceEth);
+        setIsConnected(true);
+
+        // ✅ ส่วนที่ 3: เรียกฟังก์ชัน Smart Contract หลังจากเชื่อมต่อกระเป๋าสำเร็จ
+        // หมายเหตุ: จะทำงานได้ถูกต้องเมื่อ User อยู่บน Ethereum Mainnet เท่านั้น
+        getSmartContractBalance(addr);
 
       } catch (error) {
-        console.error("MetaMask connection error", error);
-        showToast('Connection Failed', 'error');
+        console.error(error);
+        alert("การเชื่อมต่อ MetaMask ล้มเหลวหรือถูกปฏิเสธ");
       }
     } else {
-      showToast(t('metaMaskError'), 'error');
-      window.open('https://metamask.io/download/', '_blank');
+      alert("ไม่พบ MetaMask กรุณาติดตั้งก่อนใช้งาน");
+      window.open("https://metamask.io/download/", "_blank");
     }
   };
 
-  const createNewWallet = () => {
-    // REAL WALLET GENERATION
+  const connectDemoMode = () => {
+    setIsDemoMode(true);
+    setAddress("0x71C...9A23 (โหมดสาธิต)");
+    setBalance("12.4502");
+    setUsdtBalance("5430.50"); // Mock data for demo
+    setIsConnected(true);
+  };
+
+  const disconnect = () => {
+    setAddress("");
+    setBalance("0.0000");
+    setUsdtBalance("0.00");
+    setIsConnected(false);
+    setIsDemoMode(false);
+  };
+
+  const getMultiTokenPrices = async () => {
+    setLoadingPrices(true);
     try {
-        const wallet = ethers.Wallet.createRandom();
-        setAddress(wallet.address);
-        setSeedPhrase(wallet.mnemonic.phrase.split(' '));
-        setBalance('0.0000');
-        setAppState('create_seed');
-    } catch (e) {
-        console.error("Wallet Creation Failed", e);
-        // Fallback for preview without real ethers
-        const wallet = ethers.Wallet.createRandom();
-        setAddress(wallet.address);
-        setSeedPhrase(wallet.mnemonic.phrase.split(' '));
-        setBalance('0.0000');
-        setAppState('create_seed');
+      const response = await fetch(
+        `https://api.coingecko.com/api/v3/simple/price?ids=ethereum,bitcoin,dai,solana,binancecoin,dogecoin&vs_currencies=usd&include_24hr_change=true`
+      );
+      const data = await response.json();
+      
+      const mappedData = {};
+      Object.keys(data).forEach(key => {
+        mappedData[key] = {
+          usd: data[key].usd,
+          change: data[key].usd_24h_change
+        };
+      });
+
+      setTokenPrices(mappedData);
+      setLastUpdated(new Date().toLocaleTimeString('th-TH'));
+    } catch (error) {
+      console.error("ไม่สามารถดึงราคาได้:", error);
+      if (isDemoMode) {
+        setTokenPrices({
+          ethereum: { usd: 3450 + Math.random() * 50, change: 2.5 },
+          bitcoin: { usd: 64000 + Math.random() * 500, change: -1.2 },
+          dai: { usd: 0.99 + Math.random() * 0.02, change: 0.01 },
+          solana: { usd: 145 + Math.random() * 5, change: 5.4 },
+          binancecoin: { usd: 590 + Math.random() * 10, change: 0.8 },
+          dogecoin: { usd: 0.16 + Math.random() * 0.01, change: -3.5 },
+        });
+        setLastUpdated(new Date().toLocaleTimeString('th-TH'));
+      }
+    } finally {
+      setLoadingPrices(false);
     }
   };
 
-  const restoreWallet = () => {
-    const phrase = importInput.trim();
-    const words = phrase.split(/\s+/);
-    if (words.length < 12) {
-        showToast('Invalid Seed Phrase (Too short)', 'error');
-        return;
-    }
-    
-    // REAL RESTORE LOGIC
-    try {
-        const wallet = ethers.Wallet.fromPhrase(phrase);
-        setSeedPhrase(words);
-        setAddress(wallet.address);
-        setBalance('0.0000'); // Note: Need a provider to fetch real balance here
-        
-        // Try to fetch balance if we have a provider
-        // const provider = new ethers.JsonRpcProvider(DEFAULT_RPC_URL);
-        // provider.getBalance(wallet.address).then((bal) => { ...
+  const checkAlerts = () => {
+    if (!tokenPrices.ethereum?.usd) return;
 
-        saveData({ seed: phrase, address: wallet.address });
-        showToast('Wallet Imported Successfully!');
-        setAppState('main_app');
-    } catch(e) {
-        showToast('Invalid Seed Phrase', 'error');
-    }
-  };
+    const newTriggered = { ...triggered };
+    let hasNewAlerts = false;
 
-  const handlePinInput = (num) => {
-    vibrate(10);
-    if (tempPin.length < 4) {
-      const newPin = tempPin + num;
-      setTempPin(newPin);
-      if (newPin.length === 4) {
-        if (appState === 'setup_pin') {
-          setUserPin(newPin);
-          setTempPin('');
-          showToast('PIN Set Successfully');
-          if (isImporting) {
-             setAppState('import_seed');
-          } else {
-             createNewWallet();
-          }
-        } else if (appState === 'login_pin') {
-          if (newPin === userPin) { setAppState('main_app'); setTempPin(''); fetchLivePrices(); } 
-          else { showToast('Incorrect PIN', 'error'); setTempPin(''); vibrate([50, 50, 50]); }
-        } else if (modalView === 'auth_export') {
-          if (newPin === userPin) { setModalView(null); setRevealKey(true); setTempPin(''); }
-          else { showToast('Incorrect PIN', 'error'); setTempPin(''); vibrate([50, 50, 50]); }
+    Object.keys(alerts).forEach((token) => {
+      const currentPrice = tokenPrices[token]?.usd;
+      if (!currentPrice) return;
+
+      const threshold = alerts[token];
+      
+      if (currentPrice >= threshold) {
+        if (!triggered[token]) {
+          newTriggered[token] = true;
+          hasNewAlerts = true;
+          triggerNotification(token, currentPrice, threshold);
+        }
+      } else {
+        if (triggered[token]) {
+           newTriggered[token] = false; 
         }
       }
+    });
+
+    if (hasNewAlerts) {
+      setTriggered(newTriggered);
     }
   };
 
-  // --- UI Helpers (Simplified) ---
-  const showToast = (msg, type = 'success') => { setNotification({ msg, type }); vibrate(type === 'error' ? [50, 50, 50] : 20); setTimeout(() => setNotification(null), 3000); };
-  const handleCopy = (text) => { setCopied(true); try { navigator.clipboard.writeText(text); } catch(e){} showToast(t('copyClipboard')); setTimeout(() => setCopied(false), 2000); };
-  const formatMoney = (amount) => `${currency === 'THB' ? '฿' : '$'}${amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-  const getExchangeRate = () => (currency === 'THB' ? 35.5 : 1);
-  const getTotalBalance = () => assets.reduce((acc, asset) => acc + ((asset.balance + (asset.staked || 0)) * asset.price), 0) * (currency === 'THB' && assets[0].price < 3000 ? 1 : getExchangeRate());
-  const toggleCurrency = () => { const newCurrency = currency === 'USD' ? 'THB' : 'USD'; setCurrency(newCurrency); saveData({ currency: newCurrency }); vibrate(10); };
-  const toggleLanguage = () => { const newLang = language === 'en' ? 'th' : 'en'; setLanguage(newLang); saveData({ language: newLang }); vibrate(10); };
-  const getThemeGradient = () => { switch(themeColor) { case 'emerald': return 'from-emerald-600 via-teal-600 to-cyan-800'; case 'violet': return 'from-violet-600 via-purple-600 to-fuchsia-800'; case 'orange': return 'from-orange-600 via-red-600 to-rose-800'; default: return 'from-blue-600 via-indigo-600 to-violet-800'; } };
-  const getThemeColor = () => { switch(themeColor) { case 'emerald': return 'text-emerald-500'; case 'violet': return 'text-violet-500'; case 'orange': return 'text-orange-500'; default: return 'text-blue-500'; } };
-  const getThemeBg = () => { switch(themeColor) { case 'emerald': return 'bg-emerald-600'; case 'violet': return 'bg-violet-600'; case 'orange': return 'bg-orange-600'; default: return 'bg-blue-600'; } };
+  const triggerNotification = (token, price, threshold) => {
+    const title = `🚨 แจ้งเตือนราคา ${token.toUpperCase()}`;
+    const body = `${token.toUpperCase()} แตะระดับราคา $${price} (เกณฑ์ที่ตั้งไว้: $${threshold})`;
 
-  // --- Transaction Logic (Updated for MetaMask) ---
-  const executeSendTransaction = async () => {
-    if (!sendAmount || !sendAddress) return;
-    const amountNum = parseFloat(sendAmount);
-    
-    // Check balance first
-    const currentAssetBalance = assets.find(a => a.symbol === sendAsset.symbol)?.balance || 0;
-    if (amountNum > currentAssetBalance) { 
-        showToast(t('insufficientBalance'), 'error'); 
-        return; 
+    if (notifPermission === "granted") {
+      new Notification(title, {
+        body,
+        icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+      });
     }
-    
-    setIsSending(true);
-    
-    try {
-        if (isMetaMaskConnected && typeof window.ethereum !== 'undefined') {
-            // Real MetaMask Transaction
-            const weiAmount = ethers.parseEther(sendAmount);
-            
-            await window.ethereum.request({
-                method: 'eth_sendTransaction',
-                params: [{
-                    from: address,
-                    to: sendAddress,
-                    value: weiAmount.toString(16),
-                }],
-            });
-            
-            showToast('Transaction submitted to MetaMask!', 'success');
-        } else {
-            // Simulation
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            showToast(t('sentSuccess'));
-        }
 
-        // Update local state for immediate feedback (for simulation or real)
-        const updatedAssets = assets.map(a => a.id === sendAsset.id ? { ...a, balance: a.balance - amountNum } : a);
-        setAssets(updatedAssets);
-        const newBalanceStr = (parseFloat(balance) - amountNum).toFixed(4);
-        setBalance(newBalanceStr);
-        saveData({ assets: updatedAssets, balance: newBalanceStr });
-        
-        setIsSending(false); setModalView(null); setSendAmount(''); setSendAddress(''); 
-        triggerConfetti();
-        
-    } catch (error) {
-        console.error(error);
-        setIsSending(false);
-        showToast('Transaction Failed', 'error');
-    }
+    setAlertHistory((prev) => [
+      {
+        id: Date.now(),
+        token,
+        price,
+        threshold,
+        time: new Date().toLocaleString('th-TH'),
+      },
+      ...prev,
+    ]);
   };
 
-  const executeSwap = () => { setIsSwapping(true); setTimeout(() => { setIsSwapping(false); setModalView(null); showToast(t('swappedSuccess')); triggerConfetti(); }, 2000); };
-  const executeStake = () => { setIsStaking(true); setTimeout(() => { setIsStaking(false); setStakeAmount(''); showToast(t('stakedSuccess')); triggerConfetti(); }, 2000); };
-  const checkSeedVerification = () => { saveData(); showToast('Wallet Verified & Created!'); setTimeout(() => setAppState('main_app'), 1000); };
-  const fetchLivePrices = async () => { if (!isOnline) return; setIsLoadingPrices(true); try { const ids = assets.map(a => a.coingeckoId).join(','); const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd,thb&include_24hr_change=true`); const data = await response.json(); if (data) { const updatedAssets = assets.map(asset => { const apiData = data[asset.coingeckoId]; if (apiData) { const newPrice = currency === 'THB' ? apiData.thb : apiData.usd; const newChange = apiData[`${currency.toLowerCase()}_24h_change`] || apiData.usd_24h_change; const newChart = [...asset.chartData.slice(1), newPrice]; return { ...asset, price: newPrice, change: parseFloat(newChange.toFixed(2)), chartData: newChart }; } return asset; }); setAssets(updatedAssets); setLastUpdated(new Date().toLocaleTimeString()); saveData({ assets: updatedAssets }); } } catch (error) { console.error("Failed to fetch prices", error); } finally { setIsLoadingPrices(false); setNetworkLatency(Math.floor(Math.random() * 50) + 20); } };
-  useEffect(() => { if (appState === 'main_app') { fetchLivePrices(); const interval = setInterval(fetchLivePrices, 60000); return () => clearInterval(interval); } }, [appState, currency, isOnline]);
+  const handleAlertChange = (token, value) => {
+    setAlerts(prev => ({
+      ...prev,
+      [token]: parseFloat(value) || 0
+    }));
+    setTriggered(prev => ({ ...prev, [token]: false }));
+  };
+
+  const exportAlertHistory = () => {
+    if (alertHistory.length === 0) {
+      alert("ไม่มีประวัติการแจ้งเตือนให้ส่งออก");
+      return;
+    }
+    const headers = ["เหรียญ", "ราคา", "เกณฑ์ที่ตั้งไว้", "เวลา"];
+    const rows = alertHistory.map(
+      (alert) => `${alert.token},${alert.price},${alert.threshold},${alert.time}`
+    );
+    const csvContent = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "alert_history.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const importAlertHistory = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split("\n").slice(1); 
+        const importedAlerts = lines
+          .filter((line) => line.trim() !== "")
+          .map((line, index) => {
+            const [token, price, threshold, time] = line.split(",");
+            return { id: Date.now() + index, token, price, threshold, time };
+          });
+        setAlertHistory(prev => [...importedAlerts, ...prev]);
+        alert("นำเข้าประวัติการแจ้งเตือนสำเร็จ!");
+      } catch (err) {
+        alert("เกิดข้อผิดพลาดในการอ่านไฟล์ CSV");
+      }
+    };
+    reader.readAsText(file);
+  };
 
   // --- Components ---
-  const ActionButton = ({ icon: Icon, label, onClick, primary }) => (<button onClick={() => {vibrate(10); onClick();}} className="flex flex-col items-center justify-center space-y-2 group"><div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 transform group-active:scale-95 shadow-lg ${primary ? `bg-gradient-to-tr from-[#E0E7FF] to-[#FFFFFF] text-black shadow-white/20` : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20'}`}><Icon size={24} className={primary ? 'text-black' : 'text-white'} strokeWidth={primary ? 2.5 : 2} /></div><span className="text-xs font-medium text-slate-300 tracking-wide group-hover:text-white transition-colors">{label}</span></button>);
-  const NavButton = ({ id, icon: Icon, label }) => (<button onClick={() => { vibrate(10); setActiveTab(id); setModalView(null); setViewAsset(null); }} className="relative group flex flex-col items-center justify-center w-full"><div className={`p-2 rounded-xl transition-all duration-300 ${activeTab === id ? 'bg-white/10 text-white' : 'text-slate-500 group-hover:text-slate-300'}`}><Icon size={24} strokeWidth={activeTab === id ? 2.5 : 2} /></div>{activeTab === id && <span className="absolute -bottom-2 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]"></span>}</button>);
-  const AssetRow = ({ asset, onClick }) => (<div onClick={() => {vibrate(5); onClick();}} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all cursor-pointer group active:scale-[0.99]"><div className="flex items-center space-x-4"><div className={`w-12 h-12 rounded-full ${asset.color} flex items-center justify-center text-white text-xl font-bold shadow-lg ring-2 ring-white/10`}>{asset.icon}</div><div><h4 className="font-bold text-white text-base tracking-tight">{asset.symbol}</h4><p className="text-xs font-medium text-slate-400">{asset.name}</p></div></div><div className="text-right"><div className="font-bold text-white text-base tracking-tight">{asset.balance.toFixed(4)}</div><div className="text-xs font-medium text-slate-400">{formatMoney(asset.balance * asset.price)}</div></div></div>);
-  const AssetChart = ({ data, color }) => { const max = Math.max(...data); const min = Math.min(...data); const range = max - min || 1; const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 300; const y = 100 - ((val - min) / range) * 80; return `${x},${y}`; }).join(' '); return (<div className="w-full h-32 overflow-hidden relative"><svg viewBox="0 0 300 100" className="w-full h-full"><defs><linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="white" stopOpacity="0.2" /><stop offset="100%" stopColor="white" stopOpacity="0" /></linearGradient></defs><path d={`M0,100 ${points} V100 H0 Z`} fill="url(#gradient)" /><polyline points={points} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></div>); };
 
-  // --- Views ---
-  if (appState === 'loading') return <div className="flex justify-center items-center h-screen bg-black text-white"><RefreshCw className="animate-spin text-blue-500"/></div>;
+  const Sparkline = ({ isPositive }) => {
+    const color = isPositive ? "#10B981" : "#EF4444";
+    const points = Array.from({ length: 10 }, (_, i) => {
+      return `${i * 10},${30 - Math.random() * 20}`;
+    }).join(" ");
+
+    return (
+      <svg width="100" height="40" viewBox="0 0 90 40" className="opacity-50">
+        <polyline
+          points={points}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    );
+  };
+
+  const TokenCard = ({ symbol, name, priceData, threshold, onChange }) => {
+    const price = priceData?.usd || 0;
+    const change = priceData?.change || 0;
+    const isPositive = change >= 0;
+
+    return (
+      <div className={`p-6 rounded-xl shadow-sm border flex flex-col gap-4 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-100'}`}>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className={`text-lg font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+              {name} <span className={`text-xs px-2 py-0.5 rounded-full uppercase ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-500'}`}>{symbol}</span>
+            </h3>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-2xl font-mono text-indigo-500 font-semibold">
+                ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+              </p>
+              <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                {isPositive ? '+' : ''}{change.toFixed(2)}%
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className={`p-2 rounded-full ${triggered[symbol] ? 'bg-red-100 text-red-600 animate-pulse' : (darkMode ? 'bg-slate-700 text-slate-400' : 'bg-green-50 text-green-600')}`}>
+              {triggered[symbol] ? <AlertTriangle size={20} /> : <TrendingUp size={20} />}
+            </div>
+            <Sparkline isPositive={isPositive} />
+          </div>
+        </div>
+        
+        <div className={`pt-4 border-t ${darkMode ? 'border-slate-700' : 'border-slate-50'}`}>
+          <label className={`text-xs font-semibold uppercase tracking-wider mb-1 block ${darkMode ? 'text-slate-400' : 'text-slate-400'}`}>
+            เกณฑ์แจ้งเตือนราคา ($)
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={threshold}
+              onChange={(e) => onChange(symbol, e.target.value)}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono ${darkMode ? 'bg-slate-900 border-slate-600 text-white' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+            />
+            <Bell size={16} className={triggered[symbol] ? "text-red-500" : "text-slate-300"} />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // --- Main Render ---
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-black p-4 font-sans text-slate-100">
-      {showConfetti && <Confetti />}
-      {notification && (<div className={`fixed top-10 z-50 px-6 py-3 rounded-2xl shadow-lg animate-slide-down border ${notification.type === 'error' ? 'bg-rose-900 border-rose-500' : 'bg-emerald-900 border-emerald-500'}`}><span className="font-bold text-sm">{notification.msg}</span></div>)}
+    <div className={`min-h-screen font-sans transition-colors duration-300 ${darkMode ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      
+      {/* Header */}
+      <header className={`border-b sticky top-0 z-10 ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-600 p-2 rounded-lg">
+              <Wallet className="text-white" size={24} />
+            </div>
+            <h1 className={`text-xl font-bold tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>Web3 Wallet App</h1>
+          </div>
 
-      <div className="w-full max-w-sm bg-[#0B0E14] rounded-[40px] shadow-2xl overflow-hidden border-[8px] border-[#1f242f] h-[850px] flex flex-col relative ring-1 ring-black/50">
-        
-        {appState === 'onboarding' && (
-           <div className="h-full flex flex-col justify-end p-8 bg-[#0B0E14] relative overflow-hidden">
-             <div className="absolute top-[-20%] left-[-20%] w-[140%] h-[60%] bg-gradient-to-b from-blue-600/20 to-transparent blur-[80px] rounded-full pointer-events-none"></div>
-             <div className="relative z-10 mb-8"><Sparkles size={40} className="text-white mb-4"/><h1 className="text-4xl font-bold text-white">Web3<br/>Wallet</h1></div>
-             
-             {/* Connect MetaMask Button */}
-             <button onClick={connectToMetaMask} className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold mb-3 hover:scale-105 transition flex items-center justify-center space-x-2">
-                <LinkIcon size={20}/> <span>{t('connectMetaMask')}</span>
-             </button>
+          <div className="flex items-center gap-3">
+            {/* Theme Toggle */}
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2 rounded-lg transition ${darkMode ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
 
-             <button onClick={() => { setIsImporting(false); setAppState('setup_pin'); }} className="w-full py-4 bg-white text-black rounded-2xl font-bold mb-3 hover:scale-105 transition">Create New Wallet</button>
-             <button onClick={() => { setIsImporting(true); setAppState('setup_pin'); }} className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition">{t('importExisting')}</button>
-           </div>
-        )}
-
-        {(appState === 'setup_pin' || appState === 'login_pin') && (
-           <div className="h-full flex flex-col items-center pt-24 px-6 bg-[#0B0E14]">
-             <Lock size={32} className="text-white mb-8" />
-             <h2 className="text-xl font-bold text-white mb-8">{appState === 'setup_pin' ? t('createPin') : t('welcomeBack')}</h2>
-             <div className="flex space-x-4 mb-12">{[0,1,2,3].map(i => <div key={i} className={`w-3 h-3 rounded-full ${tempPin.length > i ? 'bg-blue-500' : 'bg-slate-700'}`} />)}</div>
-             <div className="grid grid-cols-3 gap-6 w-full max-w-[280px]">
-               {[1,2,3,4,5,6,7,8,9].map(n => <button key={n} onClick={() => handlePinInput(n)} className="w-16 h-16 rounded-full bg-white/10 text-white text-xl hover:bg-white/20">{n}</button>)}
-               <div/> <button onClick={() => handlePinInput(0)} className="w-16 h-16 rounded-full bg-white/10 text-white text-xl">0</button> <button onClick={() => setTempPin(p=>p.slice(0,-1))} className="w-16 h-16 rounded-full text-rose-500 flex items-center justify-center"><Delete/></button>
-             </div>
-             {/* Emergency Reset for stuck users */}
-             {appState === 'login_pin' && <button onClick={clearWallet} className="mt-auto text-xs text-rose-500 hover:text-white transition py-4">{t('resetWallet')}</button>}
-           </div>
-        )}
-
-        {appState === 'import_seed' && (
-           <div className="h-full flex flex-col p-8 bg-[#0B0E14]">
-             <div className="flex items-center space-x-3 mb-6"><button onClick={() => setAppState('onboarding')} className="p-2 bg-white/5 rounded-full text-slate-400 hover:text-white"><ChevronLeft/></button><h2 className="text-2xl font-bold text-white">{t('importWallet')}</h2></div>
-             <p className="text-slate-400 text-sm mb-4">{t('enterSeed')}</p>
-             <textarea value={importInput} onChange={(e) => setImportInput(e.target.value)} className="w-full h-40 bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-blue-500 resize-none font-mono" placeholder="word1 word2 word3..." />
-             <button onClick={restoreWallet} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold mt-auto hover:bg-blue-500 transition">{t('restore')}</button>
-           </div>
-        )}
-
-        {appState === 'create_seed' && (<div className="h-full flex flex-col p-8 bg-[#0B0E14]"><h2 className="text-2xl font-bold text-white mb-4">{t('backup')}</h2><div className="grid grid-cols-3 gap-2 mb-8">{seedPhrase.map((w, i) => <div key={i} className="bg-white/5 p-2 rounded text-xs text-center text-slate-300">{i+1}. {w}</div>)}</div><button onClick={() => handleCopy(seedPhrase.join(' '))} className="w-full py-4 bg-white/10 text-white rounded-2xl font-bold mb-4 border border-white/10">{copied ? <Check className="mx-auto"/> : t('copyClipboard')}</button><button onClick={() => setAppState('verify_seed')} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold mt-auto">{t('nextStep')}</button></div>)}
-        
-        {appState === 'verify_seed' && (<div className="h-full flex flex-col p-8 bg-[#0B0E14]"><h2 className="text-2xl font-bold text-white mb-4">{t('verify')}</h2><div className="bg-white/5 border border-white/10 rounded-2xl p-4 min-h-[120px] mb-8 flex flex-wrap content-start gap-2 shadow-inner">{verifySelection.length === 0 && <span className="text-slate-600 text-sm w-full text-center mt-8">Tap words in order</span>}{verifySelection.map((word, index) => (<button key={index} onClick={() => setVerifySelection(verifySelection.filter(w => w !== word))} className="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg animate-scale-in">{index + 1}. {word}</button>))}</div><div className="flex flex-wrap gap-2 justify-center">{[...seedPhrase].sort(() => 0.5 - Math.random()).map((word, index) => {const isSelected = verifySelection.includes(word);return (<button key={index} onClick={() => !isSelected && setVerifySelection([...verifySelection, word])} disabled={isSelected} className={`text-sm font-medium px-4 py-2 rounded-xl border transition-all ${isSelected ? 'opacity-0' : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/20'}`}>{word}</button>);})}</div><button onClick={checkSeedVerification} disabled={verifySelection.length !== 12} className={`w-full py-4 mt-auto rounded-2xl font-bold transition-all ${verifySelection.length === 12 ? 'bg-blue-600 text-white' : 'bg-slate-500 text-slate-500 cursor-not-allowed'}`}>{t('confirm')}</button></div>)}
-
-        {appState === 'main_app' && (
-           <div className="h-full flex flex-col bg-[#0B0E14] relative">
-              {/* Header */}
-              <div className="p-6 flex justify-between items-center">
-                 <div className="flex items-center space-x-2 bg-white/5 px-3 py-1 rounded-full border border-white/10">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-slate-300">{isMetaMaskConnected ? 'MetaMask' : 'Ethereum'}</span>
-                 </div>
-                 <div className="flex space-x-4"><button onClick={() => setModalView('scanner')} className="p-2 rounded-full hover:bg-white/5 transition"><ScanLine size={20} className="text-slate-300" /></button><button onClick={() => setModalView('notifications')} className="relative p-2 rounded-full hover:bg-white/5 transition"><Bell size={20} className="text-slate-300" /><span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-[#0B0E14]"></span></button></div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar relative z-10">
-                {activeTab === 'home' && <HomeTab />}
-                {activeTab === 'discover' && <DiscoverTab />}
-                {/* NFTs and Settings Tabs Hidden for brevity but logic is preserved */}
-                {activeTab === 'nfts' && (<div className="px-6 pt-6 mb-28 animate-fade-in"><h2 className="text-3xl font-bold text-white mb-6">{t('collectibles')}</h2><div className="grid grid-cols-2 gap-4">{nfts.map(nft => (<div key={nft.id} className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden hover:bg-white/10 transition group"><div className={`h-32 w-full ${nft.image} group-hover:scale-105 transition-transform duration-500`}></div><div className="p-3"><h4 className="font-bold text-white text-sm">{nft.name}</h4><p className="text-xs text-slate-400">{nft.collection}</p></div></div>))}</div></div>)}
-                {activeTab === 'settings' && <SettingsTab />}
-              </div>
-
-              {/* Footer Nav */}
-              <div className="absolute bottom-6 left-6 right-6 z-30">
-                <div className="bg-[#1A1F2E]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex justify-around items-center h-[70px] px-2">
-                  <NavButton id="home" icon={Wallet} label={t('general')} />
-                  <NavButton id="discover" icon={Compass} label={t('discover')} />
-                  <div className="relative -top-6"><button onClick={() => setModalView('swap')} className={`w-16 h-16 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.5)] border-4 border-[#0B0E14] transform transition hover:scale-105 active:scale-95 group bg-gradient-to-tr ${getThemeGradient()}`}><ArrowRightLeft size={28} className="text-white group-hover:rotate-180 transition-transform duration-500" /></button></div>
-                  <NavButton id="nfts" icon={Layers} label="NFTs" />
-                  <NavButton id="settings" icon={Settings} label={t('settings')} />
+            {!isConnected ? (
+              <>
+                <button 
+                  onClick={connectToMetaMask}
+                  className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${darkMode ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+                >
+                  <Wallet size={18} /> เชื่อมต่อกระเป๋าเงิน
+                </button>
+                <button 
+                  onClick={connectDemoMode}
+                  className="px-4 py-2 bg-indigo-500 text-white rounded-lg font-medium hover:bg-indigo-600 transition"
+                >
+                  ลองใช้โหมดสาธิต
+                </button>
+              </>
+            ) : (
+              <div className={`flex items-center gap-3 px-4 py-2 rounded-lg border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-100 border-slate-200'}`}>
+                <div className="flex flex-col items-end">
+                   <span className={`text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                     {isDemoMode ? "เครือข่ายสาธิต" : "Ethereum Mainnet"}
+                   </span>
+                   <span className={`text-sm font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+                     {address.slice(0, 6)}...{address.slice(-4)}
+                   </span>
                 </div>
-             </div>
-           </div>
+                <div className={`h-8 w-[1px] mx-1 ${darkMode ? 'bg-slate-600' : 'bg-slate-300'}`}></div>
+                <div className="text-right">
+                  <span className={`block text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>ยอดเงิน ETH</span>
+                  <span className="block font-mono font-bold text-indigo-500">{balance}</span>
+                </div>
+                <div className={`h-8 w-[1px] mx-1 ${darkMode ? 'bg-slate-600' : 'bg-slate-300'}`}></div>
+                 {/* ✅ แสดงยอดเงิน Token จาก Smart Contract */}
+                <div className="text-right">
+                  <span className={`block text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>USDT (Contract)</span>
+                  <span className="block font-mono font-bold text-green-500">{usdtBalance}</span>
+                </div>
+
+                <button onClick={disconnect} className="ml-2 p-1 rounded-full text-slate-400 hover:text-red-500 hover:bg-opacity-10 hover:bg-red-500 transition">
+                  <XCircle size={18} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        
+        {/* Permission Banner */}
+        {notifPermission === "default" && (
+          <div className="bg-indigo-600 text-white p-4 rounded-lg shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell className="animate-bounce" />
+              <div>
+                <p className="font-bold">เปิดใช้งานการแจ้งเตือนราคา</p>
+                <p className="text-indigo-100 text-sm">รับการแจ้งเตือนทันทีเมื่อเหรียญของคุณถึงราคาเป้าหมาย</p>
+              </div>
+            </div>
+            <button 
+              onClick={requestNotificationPermission}
+              className="px-4 py-2 bg-white text-indigo-700 rounded-lg font-bold text-sm hover:bg-indigo-50 transition"
+            >
+              อนุญาตการแจ้งเตือน
+            </button>
+          </div>
         )}
 
-        {/* Modals - Simplified for brevity (Reuse from previous steps) */}
-        {modalView === 'send' && (<div className="absolute inset-0 z-50 bg-[#0B0E14] flex flex-col p-6 animate-slide-up"><div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-white">{t('send')}</h2><button onClick={() => setModalView(null)}><X className="text-white"/></button></div><div className="space-y-6"><div><label className="text-xs text-slate-400">To</label><input value={sendAddress} onChange={e=>setSendAddress(e.target.value)} className="w-full bg-white/5 p-2 rounded text-white"/></div><div><label className="text-xs text-slate-400">Amount</label><input value={sendAmount} onChange={e=>setSendAmount(e.target.value)} className="w-full bg-white/5 p-2 rounded text-white"/></div><button onClick={executeSendTransaction} className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white">{isSending ? t('processing') : t('confirm')}</button></div></div>)}
-        {modalView === 'settings' && (<div className="absolute inset-0 z-50 bg-[#0B0E14] flex flex-col p-6 animate-slide-up"><div className="flex justify-between items-center mb-8"><h2 className="text-2xl font-bold text-white">{t('settings')}</h2><button onClick={() => setModalView(null)}><X className="text-white"/></button></div><button onClick={()=>{localStorage.removeItem('web3_wallet_vault_real'); window.location.reload();}} className="w-full py-4 bg-rose-500/10 text-rose-500 rounded-xl font-bold">{t('resetWallet')}</button><div className="mt-4 text-center"><button onClick={toggleLanguage} className="text-blue-400 text-sm">Switch Language ({language})</button></div></div>)}
+        {/* Portfolio Value Summary */}
+        {isConnected && tokenPrices.ethereum.usd > 0 && (
+          <section className={`p-6 rounded-xl border ${darkMode ? 'bg-gradient-to-r from-slate-800 to-slate-900 border-slate-700' : 'bg-gradient-to-r from-indigo-50 to-white border-indigo-100'}`}>
+            <h2 className={`text-sm font-semibold uppercase tracking-wide mb-2 ${darkMode ? 'text-slate-400' : 'text-indigo-500'}`}>
+              มูลค่าพอร์ตโดยรวม (Estimates)
+            </h2>
+            <div className="flex items-center gap-2">
+              <DollarSign className="text-green-500" size={32} />
+              <span className={`text-4xl font-bold font-mono ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                {/* คำนวณมูลค่ารวมทั้ง ETH และ USDT (สมมติ 1 USDT = $1) */}
+                {((parseFloat(balance) * tokenPrices.ethereum.usd) + parseFloat(usdtBalance)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+              <span className={`text-sm font-medium mt-3 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                USD
+              </span>
+            </div>
+            <p className={`text-sm mt-2 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+              คำนวณจาก (ETH x ราคาตลาด) + (USDT ที่อ่านจาก Contract)
+            </p>
+          </section>
+        )}
 
-        {/* Asset Detail Overlay */}
-        {viewAsset && <AssetDetailView asset={viewAsset} onClose={() => setViewAsset(null)} />}
-        {activeDapp && <DappBrowser dapp={activeDapp} onClose={() => setActiveDapp(null)} />}
-        
-      </div>
+        {/* Dashboard Grid */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className={`text-2xl font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+              <TrendingUp size={24} className="text-indigo-500" /> กระดานข้อมูลตลาด
+            </h2>
+            <div className="flex items-center gap-4">
+              {lastUpdated && <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-400'}`}>อัปเดตล่าสุด: {lastUpdated}</span>}
+              <button 
+                onClick={getMultiTokenPrices}
+                disabled={loadingPrices}
+                className={`p-2 rounded-full border transition ${darkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white' : 'bg-white border-slate-200 text-slate-500 hover:text-indigo-600'} ${loadingPrices ? 'animate-spin' : ''}`}
+              >
+                <RefreshCw size={18} />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TokenCard 
+              symbol="ethereum" 
+              name="Ethereum" 
+              priceData={tokenPrices.ethereum} 
+              threshold={alerts.ethereum} 
+              onChange={handleAlertChange}
+            />
+            <TokenCard 
+              symbol="bitcoin" 
+              name="Bitcoin" 
+              priceData={tokenPrices.bitcoin} 
+              threshold={alerts.bitcoin} 
+              onChange={handleAlertChange}
+            />
+            <TokenCard 
+              symbol="dai" 
+              name="Dai" 
+              priceData={tokenPrices.dai} 
+              threshold={alerts.dai} 
+              onChange={handleAlertChange}
+            />
+            {/* New Tokens */}
+            <TokenCard 
+              symbol="solana" 
+              name="Solana" 
+              priceData={tokenPrices.solana} 
+              threshold={alerts.solana} 
+              onChange={handleAlertChange}
+            />
+            <TokenCard 
+              symbol="binancecoin" 
+              name="BNB" 
+              priceData={tokenPrices.binancecoin} 
+              threshold={alerts.binancecoin} 
+              onChange={handleAlertChange}
+            />
+            <TokenCard 
+              symbol="dogecoin" 
+              name="Dogecoin" 
+              priceData={tokenPrices.dogecoin} 
+              threshold={alerts.dogecoin} 
+              onChange={handleAlertChange}
+            />
+          </div>
+        </section>
+
+        {/* History Section */}
+        <section className={`rounded-xl shadow-sm border overflow-hidden ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`p-6 border-b flex flex-col md:flex-row md:items-center justify-between gap-4 ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+            <h2 className={`text-xl font-bold flex items-center gap-2 ${darkMode ? 'text-white' : 'text-slate-800'}`}>
+              <History className="text-indigo-500" /> ประวัติการแจ้งเตือน
+            </h2>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={exportAlertHistory}
+                className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition ${darkMode ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                <Download size={16} /> ส่งออก CSV
+              </button>
+              <label className={`flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition cursor-pointer ${darkMode ? 'bg-slate-700 text-slate-200 hover:bg-slate-600' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                <Upload size={16} /> นำเข้า CSV
+                <input type="file" accept=".csv" onChange={importAlertHistory} className="hidden" />
+              </label>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className={`w-full text-left text-sm ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+              <thead className={`border-b ${darkMode ? 'bg-slate-900 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                <tr>
+                  <th className={`px-6 py-4 font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>เวลา</th>
+                  <th className={`px-6 py-4 font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>เหรียญ</th>
+                  <th className={`px-6 py-4 font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>ราคาที่แจ้งเตือน</th>
+                  <th className={`px-6 py-4 font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>เกณฑ์ที่ตั้งไว้</th>
+                  <th className={`px-6 py-4 font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${darkMode ? 'divide-slate-700' : 'divide-slate-100'}`}>
+                {alertHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-12 text-center text-slate-400 italic">
+                      ยังไม่มีการแจ้งเตือน ลองตั้งค่าเกณฑ์ให้ต่ำกว่าราคาปัจจุบันเพื่อทดสอบ
+                    </td>
+                  </tr>
+                ) : (
+                  alertHistory.map((alert, idx) => (
+                    <tr key={idx} className={`transition ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-50'}`}>
+                      <td className="px-6 py-4 whitespace-nowrap">{alert.time}</td>
+                      <td className={`px-6 py-4 capitalize font-medium ${darkMode ? 'text-white' : 'text-slate-800'}`}>{alert.token}</td>
+                      <td className="px-6 py-4 font-mono text-indigo-500">${alert.price}</td>
+                      <td className="px-6 py-4 font-mono text-slate-500">${alert.threshold}</td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircle size={12} /> แจ้งเตือนแล้ว
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
