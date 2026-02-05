@@ -238,7 +238,7 @@ const App = () => {
   // --- Initialize Firebase & Ethers (Condensed) ---
   useEffect(() => {
     try {
-      let config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "AIzaSyDqbllQ68zYTPag1UdjM2klTEBDd43wDAk", authDomain: "boomwallet-2583b.firebaseapp.com", projectId: "boomwallet-2583b", storageBucket: "boomwallet-2583b.firebasestorage.app", messagingSenderId: "1032978734418", appId: "1:1032978734418:web:50605af806581bf4a86e8b" };
+      let config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "", authDomain: "boomwallet-2583b.firebaseapp.com", projectId: "boomwallet-2583b", storageBucket: "boomwallet-2583b.firebasestorage.app", messagingSenderId: "1032978734418", appId: "1:1032978734418:web:50605af806581bf4a86e8b" };
       if (!config) return;
       const app = initializeApp(config);
       const authInstance = getAuth(app);
